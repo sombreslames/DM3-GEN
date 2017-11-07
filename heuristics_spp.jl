@@ -1,7 +1,7 @@
 function GraspConstruction(Pb::Problem,Indi::Individual, Alpha::Float64)
    Available::Int32            = Pb.NBvariables
    IndiTemp::Individual             = deepcopy(Indi)
-   RandomCandidateList  = Int[]
+   RandomCandidateList         = Vector{Int32}(1)
    Utility = deepcopy(Pb.Utility)
    AboveTheLimit::Int32        = 0
    while Available >= 1
@@ -19,8 +19,8 @@ function GraspConstruction(Pb::Problem,Indi::Individual, Alpha::Float64)
       if AboveTheLimit == 0
          break
       else
-         RandomPickedCandidate   = rand(RandomCandidateList)
-         answer,Indi              = SetToOne(Pb,Indi,RandomPickedCandidate)
+         RandomPickedCandidate    = rand(RandomCandidateList)
+         answer,Indi              = SetToOne(Pb,Indi,convert(Int32,RandomPickedCandidate))
 			if answer == false
 				println("Failed")
 			end

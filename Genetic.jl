@@ -14,7 +14,7 @@ function InitPopulation(Pb::Problem,N::Int32,Grasp::Grasp)
       IndivTemp         = Individual(Pb.Bonus,zeros(Int64,Pb.NBvariables),zeros(Int64,0),zeros(Int64,Pb.NBconstraints),zeros(Int64,Pb.NBvariables))
       IndexAlpha,Alpha  = ReactiveGrasp(Grasp)
       IndivTemp         = GraspConstruction(Pb,IndivTemp,Alpha)
-      Population[i]     = Genome(IndivTemp.CurrentObjectiveValue,IndivTemp.solution)
+      Population[i]     = Genome(IndivTemp.CurrentObjectiveValue,IndivTemp.Solution)
       if Population[i].CurrentObjectiveValue > Max
          Max = Population[i].CurrentObjectiveValue
       elseif  Population[i].CurrentObjectiveValue < Min
@@ -28,18 +28,22 @@ function InitPopulation(Pb::Problem,N::Int32,Grasp::Grasp)
    println("# Moyenne : ",TotSum/sum(NBruns))
    println("# MIN : ", Min, " | MAX : ",Max)
    println("############################################################")
+   #GRASP AVERGARDE VALUE
    for j in 1:1:G
       Average[j] = Average[j] / NBruns[j]
    end
    Population = sort(Population,by=a->a.CurrentObjectiveValue,rev=true)
-   return Pb,Population,TotSum
+   Population.MinObj = Min
+   Population.SumObj = TotSum
+   return Pb,Population
 end
 
-function Evolution(Population::Vector{Individual},Pb::Problem,NPop::Int32,Ngen::Int32,Grasp::Grasp,SumObj::Int32)
+function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int32,Grasp::Grasp)
    for i  = 1:1:Ngen
       for j = 1:1:NPop
-         p1,p2 = BinaryTourmanent(Population,NPop,false,SumObj)
-         child = CrossoverMethod1(Pb,Population[p1],Population[p2])
+         p1,p2 = BinaryTourmanent(Population,NPop,false,Pb)
+         #here repair and mutate
+         child1,child2 = CrossoverMethod1(Pb,Population[p1],Population[p2],Pb.SumObj)
          InsertAndReplace(Population,child)
          ProbMut = rand()
          if ProbMut > 0.8
@@ -50,35 +54,20 @@ function Evolution(Population::Vector{Individual},Pb::Problem,NPop::Int32,Ngen::
 
 
 end
-function InsertAndReplace(Population::Vector{Individual},Indi::Individual)
-   index = searchsortedfirst(Population,Indi,by=x->x.CurrentObjectiveValue,rev=true)
-   insert!(Population,index,Indi)
-   PopSize = length(Population)
-   deleteat!(Population,PopSize)
-end
 
-function Mutation(Pb::Problem,Indi::Genome)
-   VarToZero      = rand(Indi.CurrentVarUsed)
-   #println(Indi.CurrentVarUsed)
-   Ok,Indi        = SetToZero(Pb,Indi,VarToZero)
-   for i in 1:1:Pb.NBvariables
-      Index = convert(Int,Pb.Utility[1,i])
-      if Indi.Freedom[Index] == 0 && Indi.Solution[Index] == 0
-            Ok,Indi = SetToOne(Pb,Indi,Index)
-            if Ok
-               #println("Mutated successfully")
-            end
-      end
-   end
+
+function RepairAndMutation(Pb::Problem,Indi::Genome)
+
    return Indi
 end
-function RouletteSelection(Population::Vector{Genome},N::Int32,SumObj::Int32)
+function RouletteSelection(Population::Vector{Genome},N::Int32,Pb::Problem)
    Value::Float64 =  0
    p1::Int32 = 0 ; p2::Int32=0
    Rand1 = rand()
    Rand2 = rand()
+   TotDec = Pb.SumObj - (N*Pb.MinObj)
    for i = 1:1:N
-      Value += Population[i].CurrentObjectiveValue/SumObj
+      Value += (Population[i].CurrentObjectiveValue-Pb.MinObj)/TotDec
       if Rand1 < Value
          p1 = i
       end
@@ -90,30 +79,13 @@ function RouletteSelection(Population::Vector{Genome},N::Int32,SumObj::Int32)
       end
    end
 end
-function ParentSelection(Population::Vector{Genome},N::Int32)
-   Parent1::Int32     = rand(1:100)
-   Parent2::Int32     = rand(1:100)
-   different::Bool         = true
-   while different
-      if Parent1 != Parent2
-         different   = false
-      else
-         Parent1     = rand(1:100)
-         Parent2     = rand(1:100)
-      end
-   end
-   return Parent1,Parent2
-end
-function BinaryTourmanent(Population::Vector{Genome},N::Int32,Mode::Bool,SumObj::Int32)
+function BinaryTourmanent(Population::Vector{Genome},N::Int32,Pb::Problem)
    #Mode = true ==> Same Probability for each individual
    p1::Int32=0;  p2::Int32=0
    p3::Int32=0;  p4::Int32=0
-   if Mode
-      p1,p2 = ParentSelection(Population,N)
-      p3,p4 = ParentSelection(Population,N)
-   else
-      p1,p2 = RouletteSelection(Population,N,SumObj)
-      p3,p4 = RouletteSelection(Population,N,SumObj)
+
+   p1,p2 = RouletteSelection(Population,N,Pb)
+   p3,p4 = RouletteSelection(Population,N,Pb)
    end
    if Population[p1].CurrentObjectiveValue > Population[p2].CurrentObjectiveValue
       if Population[p3].CurrentObjectiveValue > Population[p4].CurrentObjectiveValue
@@ -129,22 +101,60 @@ function BinaryTourmanent(Population::Vector{Genome},N::Int32,Mode::Bool,SumObj:
 end
 #  Child[i] = parent1[i] if mask[i]=1
 #  Child[i] = parent2[i] if mask[i]=0
-function CrossoverMethod1(Pb::Problem,Parent1::Genome,Parent2::Genome)
-   Child = Individual(Pb.Bonus,zeros(Int64,Pb.NBvariables),zeros(Int64,0),zeros(Int64,Pb.NBconstraints),zeros(Int64,Pb.NBvariables))
-   Mask = rand(0:1,Pb.NBvariables)
+function CrossoverMethod(Pb::Problem,Parent1::Genome,Parent2::Genome)
+   Child1 = Individual(Pb.Bonus,zeros(Int64,Pb.NBvariables))
+   Child2 = Individual(Pb.Bonus,zeros(Int64,Pb.NBvariables))
+   #Soyons malin utilisons les probabilites
    for i in 1:1:Pb.NBvariables
-      if Mask[i] == 1 && Parent1.Solution[i] == 1
-         ChildTemp.Solution[i] = 1
-         ChildTemp.CurrentObjectiveValue += Pb.Variables[i]
-      elseif Mask[i] == 0 && Parent2.Solution[i] == 1
-         ChildTemp.Solution[i] = 1
-         ChildTemp.CurrentObjectiveValue += Pb.Variables[i]
+      if Parent1.Solution[i]  == Parent1.Solution[2]
+         Child1.Solution[i] = Parent1.Solution[i]
+         Child2.Solution[i] = Parent1.Solution[i]
+         if Parent1.Solution[i] == 1
+            Child1.CurrentObjectiveValue += Pb.Variables[i]
+            Child2.CurrentObjectiveValue += Pb.Variables[i]
+         end
+      else
+         Probk1 = rand(1:2)
+         if Probk1 == 1
+            Probk2 = 2
+            pk = Parent1.CurrentObjectiveValue / ( Parent1.CurrentObjectiveValue + Parent2.CurrentObjectiveValue)
+            if rand > pk
+               Child1.Solution[i] = Parent1.Solution[i]
+               if Parent1.Solution[i] == 1
+                  Child1.CurrentObjectiveValue += Pb.Variables[i]
+               end
+            else
+               Child1.Solution[i] = Parent2.Solution[i]
+               if Parent2.Solution[i] == 1
+                  Child1.CurrentObjectiveValue += Pb.Variables[i]
+               end
+            end
+         else
+            Probk2 = 1
+            pk = Parent2.CurrentObjectiveValue / ( Parent1.CurrentObjectiveValue + Parent2.CurrentObjectiveValue)
+            if rand > pk
+               Child1.Solution[i] = Parent2.Solution[i]
+               if Parent2.Solution[i] == 1
+                  Child1.CurrentObjectiveValue += Pb.Variables[i]
+               end
+            else
+               Child1.Solution[i] = Parent1.Solution[i]
+               if Parent1.Solution[i] == 1
+                  Child1.CurrentObjectiveValue += Pb.Variables[i]
+               end
+            end
+         end
       end
    end
-   #=println("###################### Crossover Info ######################")
+   println("###################### Crossover Info ######################")
    println("# Parent 1 : ",Parent1.CurrentObjectiveValue," | Parent 2 :",Parent2.CurrentObjectiveValue)
-   println("# Child : ",Child.CurrentObjectiveValue)
+   println("# Child 1 : ",Child1.CurrentObjectiveValue,"# Child 2 : ",Child2.CurrentObjectiveValue))
    println("############################################################")
-   =#return Child
+   return Child1,Child2
 end
-#   println("# Parent 2 : ",Parent2.CurrentObjectiveValue,"\n","# ",Parent2.Solution)
+function InsertAndReplace(Population::Vector{Genome},Indi::Genome)
+   index = searchsortedfirst(Population,Indi,by=x->x.CurrentObjectiveValue,rev=true)
+   insert!(Population,index,Indi)
+   PopSize = length(Population)
+   deleteat!(Population,PopSize)
+end

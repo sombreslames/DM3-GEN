@@ -13,6 +13,8 @@ type Problem
    LeftMembers_Constraints::SparseMatrixCSC{Int32,Int32}
    Utility::Array{Float64,2}
    Bonus::Int64
+   SumObj::Int64
+   MinObj::Int64
 end
 #Individual describe a possible solution, it will be used as an individu for the population of the genetic algorithm
 #Solution is the variable containing the solution
@@ -34,17 +36,17 @@ type Grasp
    Values::Vector{Float64}
    Probability::Vector{Float64}
 end
-include("heuristics_spp1.jl")
+include("heuristics_spp.jl")
 include("ToolsAndPlot.jl")
-include("genetic1.jl")
+include("Genetic.jl")
 function main()
    N::Int32             = 100
    Ngen::Int32          = 30
    Pb::Problem          = ReadFile("./Data/pb_100rnd0100.dat")
    Grasp1::Grasp        = Grasp([0.50,0.65,0.75,0.80,0.90],[0.20,0.20,0.20,0.20,0.20])
-   Pb,Population::Vector{Genome},SumObj::Int32 = InitPopulation(Pb,N,Grasp1)
-   #Evolution(Population,BPP,100,Grasp1,SumObj)
-   #@time Evolution(Population,Pb,N,Ngen,Grasp1,SumObj)
+   Pb,Population::Vector{Genome} = InitPopulation(Pb,N,Grasp1)
+   println("Beginning evolution #IDONTBELIEVEINIT")
+   #@time Evolution(Population,Pb,N,Ngen,Grasp1)
    #println(Population[1].CurrentObjectiveValue)
 end
 
