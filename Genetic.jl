@@ -33,12 +33,13 @@ function InitPopulation(Pb::Problem,N::Int32,Grasp::Grasp)
       Average[j] = Average[j] / NBruns[j]
    end
    Population = sort(Population,by=a->a.CurrentObjectiveValue,rev=true)
-   Population.MinObj = Min
-   Population.SumObj = TotSum
+   Pb.MinObj = Min
+   Pb.SumObj = TotSum
    return Pb,Population
 end
 
 function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int32,Grasp::Grasp)
+   rng = MersenneTwister(1234);
    for i  = 1:1:Ngen
       for j = 1:1:NPop
          p1,p2 = BinaryTourmanent(Population,NPop,false,Pb)
@@ -56,8 +57,15 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
 end
 
 
-function RepairAndMutation(Pb::Problem,Indi::Genome)
+function RepairAndMutation(Pb::Problem,Indi::Genome,RandSeed::MersenneTwister)
+   RanPermut = randperm(RandSeed, Pb.NBconstraints)
+   for i in eachindex(RanPermut)
+      for j in 1:1:Pb.NBconstraints
+         if Pb.LeftMembers_Constraints[RanPermut[i],j] ==1
 
+         end
+      end
+   end
    return Indi
 end
 function RouletteSelection(Population::Vector{Genome},N::Int32,Pb::Problem)
@@ -86,7 +94,7 @@ function BinaryTourmanent(Population::Vector{Genome},N::Int32,Pb::Problem)
 
    p1,p2 = RouletteSelection(Population,N,Pb)
    p3,p4 = RouletteSelection(Population,N,Pb)
-   end
+
    if Population[p1].CurrentObjectiveValue > Population[p2].CurrentObjectiveValue
       if Population[p3].CurrentObjectiveValue > Population[p4].CurrentObjectiveValue
          return p1,p3
@@ -148,7 +156,7 @@ function CrossoverMethod(Pb::Problem,Parent1::Genome,Parent2::Genome)
    end
    println("###################### Crossover Info ######################")
    println("# Parent 1 : ",Parent1.CurrentObjectiveValue," | Parent 2 :",Parent2.CurrentObjectiveValue)
-   println("# Child 1 : ",Child1.CurrentObjectiveValue,"# Child 2 : ",Child2.CurrentObjectiveValue))
+   println("# Child 1 : ",Child1.CurrentObjectiveValue,"# Child 2 : ",Child2.CurrentObjectiveValue)
    println("############################################################")
    return Child1,Child2
 end

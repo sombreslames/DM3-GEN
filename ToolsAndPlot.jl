@@ -12,7 +12,7 @@ function ReadFile(FileName::String)
          end
    end
    close(workingfile)
-   return Problem(NBvar, NBcons, Coef, LeftMembers_Constraints,Array{Float64}(2,NBvar),0)
+   return Problem(NBvar, NBcons, Coef, LeftMembers_Constraints,Array{Float64}(2,NBvar),0,0,0)
 end
 function plotRunGrasp(iname,zinit, zls, zbest)
     figure("Examen d'un run",figsize=(6,6)) # Create a new figure
