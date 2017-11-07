@@ -1,0 +1,16 @@
+\select@language {english}
+\select@language {english}
+\contentsline {section}{\numberline {1}Introduction to the Set Packing Problem}{3}
+\contentsline {subsection}{\numberline {1.1}JuMP modelisation for the set packing problem}{3}
+\contentsline {subsection}{\numberline {1.2}Ten instances of the SPP}{4}
+\contentsline {subsection}{\numberline {1.3}Constructing a solution}{4}
+\contentsline {subsubsection}{\numberline {1.3.1}Greedy randomized adaptive search procedure (GRASP)}{4}
+\contentsline {subsubsection}{\numberline {1.3.2}Tutorial step by step}{5}
+\contentsline {subsubsection}{\numberline {1.3.3}Reactive GRASP}{7}
+\contentsline {subsubsection}{\numberline {1.3.4}Feasibility of our solution}{8}
+\contentsline {subsection}{\numberline {1.4}Improving our solution}{9}
+\contentsline {subsubsection}{\numberline {1.4.1}Simulated annealing}{9}
+\contentsline {subsubsection}{\numberline {1.4.2}A greedy local search}{10}
+\contentsline {subsection}{\numberline {1.5}Results and performances}{10}
+\contentsline {subsubsection}{\numberline {1.5.1}System and environment}{10}
+\contentsline {subsection}{\numberline {1.6}Interpreting the results}{12}
