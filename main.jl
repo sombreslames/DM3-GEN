@@ -46,7 +46,7 @@ function main()
    N::Int32             = 100
    Ngen::Int32          = 30
    Grasp1::Grasp        = Grasp([0.50,0.65,0.75,0.80,0.90],[0.20,0.20,0.20,0.20,0.20])
-   filename = string("pb_200rnd0300.dat")
+   filename = string("pb_100rnd0100.dat")
    Pb::Problem          = ReadFile(string("./Data/",filename))
    println("Beginning evolution #IDONTBELIEVEINIT")
    max = 0
@@ -57,7 +57,7 @@ function main()
    for i = 1:1:maxit
       tic()
       Pb,Population::Vector{Genome} = InitPopulation(Pb,N,Grasp1)
-      #=ngen,sv,=#Population = Evolution(Population,Pb,N,Ngen,0.01)
+      Population = Evolution(Population,Pb,N,Ngen,0.01)
       Time+= toc()
       AVG+=Population[1].CurrentObjectiveValue
       if Population[1].CurrentObjectiveValue < min

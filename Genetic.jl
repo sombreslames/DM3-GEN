@@ -26,9 +26,6 @@ end
 
 function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int32,stoplimit::Float64)
    it = 0
-   #save::Int32 = 1
-   #=SaveResultPop = Array{Vector{Genome}}(Ngen+1)
-   SaveResultPop[1] = deepcopy(Population)=#
    for i  = 1:1:Ngen
        for j = 1:2:NPop
          #here repair and mutate
@@ -77,8 +74,6 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
          end
          it += 2
       end
-      #SaveResultPop[i+1] = deepcopy(Population)
-      #save = i
       #=println("###################### Generation Info #####################")
       println("# Generation : ",i)
       println("# Moyenne : ",round(Pb.SumObj/NPop,2))
@@ -89,18 +84,12 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
          break
       end
    end
-   return #=save,SaveResultPop,=#Population
+   return Population
 end
 function RepairAndMutationSparse(Pb::Problem,Indi::Genome)
 
    #=println("###################### Repair Info ######################")
    println("# Before repair : ",Indi.CurrentObjectiveValue)=#
-   #THIS MIGHT BE BIG BULLSHIT, DOWN HERE
-   #=RandAll = randperm(size)
-   IndexRow = IndexRow[RandAll]
-   IndexColumn = IndexColumn[RandAll]
-   Value       = Value[RandAll]=#
-   #BULLSHIT UP HERE
    IndexRow,IndexColumn,Value = findnz(Pb.LeftMembers_Constraints)
    size = length(IndexRow)
    SaturatedCtrt = 0
@@ -168,7 +157,6 @@ function RouletteSelection(Population::Vector{Genome},N::Int32,Pb::Problem)
    Rand2::Float64 = rand(RdSeed)
    TotDec = Pb.SumObj - (N*Pb.MinObj)
    for i = 1:1:N
-      # REMPLACER PB MIN OBJ PAR la f(x) du dernier element du vecteur pop
       Value += (Population[i].CurrentObjectiveValue-Pb.MinObj)/TotDec
       if Rand1 < Value
          p1 = i
@@ -183,7 +171,6 @@ function RouletteSelection(Population::Vector{Genome},N::Int32,Pb::Problem)
    return rand(RdSeed,1:N),rand(RdSeed,1:N)
 end
 function BinaryTourmanent(Population::Vector{Genome},N::Int32,Pb::Problem)
-   #Mode = true ==> Same Probability for each individual
    p1::Int32=0;  p2::Int32=0
    p3::Int32=0;  p4::Int32=0
 
