@@ -159,10 +159,39 @@
 		\end{tabular}
 	\end{center}
 	
-	\subsection{Constructing a solution}
-	 \subsubsection{Greedy randomized adaptive search procedure (GRASP)}
+	
+	
+
+	\section{Genetic algorithm}
+	
+	During this second homework we had to choose an algorithm between ACO,GA and Simulated Annealing. I wanted to develop a genetic algorithm because of the many features that can be included and adjusted to fit the problem. For example there are many way of operating a crossover or a mutation. You can add some random individual into your population to diversify it and maybe avoid a local optimum etc.. All the tuning possible concerning the different crossover method, the probability of mutation etc. look interesting.
+	
+	I will now describe all the different component of my algorithm, beginning by the structure of an individual also called solution.
+	
+	\subsection{Data structure}
+	\subsubsection{Problem data structure}
+	To store the problem we will use two different type, a sparse matrix for the constraints and a vector for the coefficient of each variable.
+	
+	I tried to use the advantage of a sparse matrix, I noticed a significant improvement in time and complexity. The SPP is highly constrained problem but because of its structure where only a few variable are present in each constraint, that is why using a sparse matrix is useful. 
+	\subsubsection{Chromosome data structure}A chromosome is  set of variables that define a solution. The population of a Genetic algorithm is composed of chromosome. 
+	
+	In my algorithm the chromosome is a data-structure composed of a vector, the solution, and an integer, the fitness value of the solution. The fitness value here is just the objective value of the problem.
+	
+	It's commonly noticed that the computation of the fitness value is the most expensive function in term of complexity. However the the structure of the set packing problem allow us to never really compute it because here we don't need the \textit{f(x)} being only a set of simple addition. So we just need to add or subtract the coefficient of a variable every time it is add or remove from the solution.
+	\subsubsection{Population data structure}
+	The population will be a vector of chromosome ordered by decreasing order of objective value.
+	And every time a new "chromosome" will be created he will be added in this array in a way to keep the order and the last element of the array will be deleted.
+	
+	And if we keep the population ordered we do not need store the minimum or maximum fitness value of the population.
+	\subsection{Building a feasible solution}
+	\subsubsection{Greedy randomized adaptive search procedure (GRASP)}
+	
+	In a genetic algorithm you handle a population and apply different method on this group of solution in order to increase it. You try to mix solutions in order to build a better one. Because a GA use this strategies in order to crate new individual you want your base population to be diverse. And GRASP is perfectly adapted to build this kind of solution.
+	
+	It will allow us  to have a diverse, good and feasible population. 
 	In order to build different good solution we will use the construction algorithm
 	called GRASP from Mauricio G. C. Resende.
+	The population for the genetic algorithm will be generated using GRASP.
 	It is an easy to program and understand algorithm. The aim is too pick randomly the
 	candidate which will be set to one through a random candidate list. 
 	The major interest of this algorithm is the technique used create the random
@@ -200,6 +229,7 @@
 			
 			RCL = $ \emptyset$
 			
+			
 			\For{i := 1 to N}{	
 				\eIf{Utility[i] >= Limit}{
 					RCL = add(RCL,i)
@@ -211,234 +241,135 @@
 			UpdateUtility(Utility)\\
 			addToSolution(Solution,Candidate)\\
 		}
-	\Return Solution\\
-	 
+		\Return Solution\\
+		
 		\caption{GRASP Construction}
 	\end{algorithm}
-	\vspace{10pt}
-	I will show step by step how this algorithm works with this example :
+\pagebreak
+	\subsection{Parent selection}
+	A roulette selection is used to find the parents that will produce the new element of the population. The roulette selection is simple it will randomly select two parents $X_1$ and $ X_2$ with the probability :
 	$$
-	\begin{array}{ccccc}
-	Max \, Z & = &   38 \, \times\, X_{1} + 26 \, \times\, X_{2} +17 \, \times\, X_{3}
-	+12 \, \times\, X_{4} +11 \, \times\, X_{5} \\ 
-	s.c. & & X_{1} +X_{3} & \leq &  1 \\
-	& & X_{2} +X_{4} & \leq &  1 \\
-	& & X_{1} +X_{5} & \leq &  1 \\
-	& & X_{1} +X_{2} & \leq &  1 \\
-	\\
-	X_{i} \in \{0,1\}
-	\end{array}
+	p_x{_i} =  \frac{f_i(x) - f_{min}(x)}{ \sum\limits_{j=1}^n \left( f_{j}(x)- f_{min}(x) \right)} 
 	$$
-	\subsubsection{Tutorial step by step}
-	I will show step by step how this algorithm works with this example,
-	here we have 5 variables and 4 constraints.
-	So \textit{m} and \textit{n} will take the value of 5 and 4, respectively.\\
-	I will now compute the utility of each variables, that can be expressed as follows for variable i :
-	$$
-	U_{i} = \frac{c_{i}}{\sum\limits_{j=1}^n x_{i,j}}
-	$$
-	So we have the two dimension array "Utility" like this :
-	$$
-	\hbox{Utility} =
-	\begin{array}{|c|c|c|c|c|}
-		\hline
-		1 & 2 & 3 & 4 & 5 \\
-		\hline
-		12,66 & 12.5 & 17 & 12 & 8 \\
-		\hline
-	\end{array}	
-	$$
-	\begin{minipage}{\linewidth}
-		\centering
-		\captionof{table}{GRASP construction : Step 1} \label{tab:title}
-		\begin{tabular}{L L L L}
-			Solution & = & \emptyset \\
-			Limit & = & \min{(Utility)} + \alpha \times (\max{(Utility)} - \min{(Utility)})\\
-			Limit & = & 8 + 0.75 * (17-8) \\
-			Limit & = & 14.75 \\
-			RCL & = & \{3\} \\
-			Candidate & = & rand(RCL) \\
-			Candidate & = & 3\\
-			Solution & = & \{3\}\\
-		\end{tabular}
-		\bigskip
-	\end{minipage}\\
-	$$
-	\hbox{Utility} =
-	\begin{array}{|c|c|c|c|c|}
-		\hline
-		 2 & 4 & 5 \\
-		\hline
-		 12.5 & 12 & 8 \\
-		\hline
-	\end{array}	
-	$$
-	\begin{minipage}{\linewidth}
-	\centering
-	\captionof{table}{GRASP construction : Step 2} \label{tab:title}
-	\begin{tabular}{L L L L}
-		Solution & = & \{3\} \\
-		Limit & = & \min{(Utility)} + \alpha \times (\max{(Utility)} - \min{(Utility)})\\
-		Limit & = & 8 + 0.75 * (12.5-8) \\
-		Limit & = & 11.375 \\
-		RCL & = & \{2,4\} \\
-		Candidate & = & rand(RCL) \\
-		Candidate & = & 2\\
-		Solution & = & \{3,2\}\\
-	\end{tabular}
-	\bigskip
-\end{minipage}
-	$$
-	\hbox{Utility} =
-	\begin{array}{|c|c|c|c|c|}
-		\hline
-		 5 \\
-		\hline
-		 8 \\
-		\hline
-	\end{array}	
-	$$
-	\begin{minipage}{\linewidth}
-		\centering
-		\captionof{table}{GRASP construction : Step 3} \label{tab:title}
-		\begin{tabular}{L L L L}
-			Solution & = & \{3,2\} \\
-			Limit & = & \min{(Utility)} + \alpha \times (\max{(Utility)} - \min{(Utility)})\\
-			Limit & = & 8 + 0.75 * (8-8) \\
-			Limit & = & 8 \\
-			RCL & = & \{5\} \\
-			Candidate & = & rand(RCL) \\
-			Candidate & = & 5\\
-			Solution & = & \{3,2,5\}\\
-		\end{tabular}
-		\bigskip
-	\end{minipage}
-	The RCL is now finish and we have the solution \{3,2,5\} with an objective value worth 37.5.
-	\pagebreak
-	\subsubsection{Reactive GRASP}
-	Reactive Grasp is just a probabilistic system that allow you to auto adjust(auto-tune) the $\alpha$ parameter given the results obtained.\\
-	Given AlphaSet, a finite set of $\alpha$ of size N with $\forall \alpha_i \in AlphaSet ,\alpha_i \in \mathbb{R} , \alpha_i \in [0,1]$, and AlphaProba a finite set of uniformly distributed probability of size N with $\forall p_i \in AlphaProba, p_i = \frac{1}{N}$\\
-	At first every $\alpha_i$ have the same probability $p_i$ to be picked, the objective of reactive Grasp is to adjust every probability after a given number of run in order to increase the probability $p_i$ of an $\alpha_i$ giving good result.\\
-	The new probability can be determine with the following formula :\\
-	$$
-			k_i = \frac{Average(Z_{p_i})-Min(Z)}{Max(Z)-Min(Z)}\\
-	$$
-	$$
-			p_i = \frac{k_i}{\sum\limits_{j=1}^N k_j}\\
-	$$
-	Where \textit{Z} is the objective value obtained by a GRASP construction followed by a local search. Here the maximum and the minimum are global over the N run without any discrimination based on $\alpha$. Only the average is computed with respect to the $\alpha$ that have been used for the construction.\\
-	\begin{algorithm}[H]
-		\tcc{AlphaProba : a vector containing the possibillity for each $ \alpha$.}
-		\tcc{Min,Max,Average are the min,max value found. N the number of $ \alpha$.}
-		\tcc{Average a vector containing the man value for each $ \alpha$ used.}
-		\KwData{AlphaProba,Min,Max,Average, N}
-		\KwResult{AlphaProba}
-
-		\For{j := 1 to N}{
-			NewValue[j] = ( Average[i] - Worst ) / ( Max - Worst )	
-		}	
-		SumOfNew = sum(NewValue)	
-		
-		\For{i := 1 to N }{
-			AlphaProba[i] = NewValue[i] / SumOfNew
-		}
-		\Return AlphaProba\\
-		
-		\caption{UpdateReactiveGRASP}
-	\end{algorithm}
-	\begin{algorithm}[H]
-		\tcc{N the number of $ \alpha$. }
-		\tcc{AlphaProba : a vector containing the possibillity for each $ \alpha$.}
-		\tcc{AlphaVal : a vector containing the value of each $ \alpha$.}
-		\KwData{AlphaProba,AlphaVal,N}
-		\KwResult{Index,Alpha}
-		Proba = random()
-		Val = 0
-		\For{j := 1 to N}{
-			val += AlphaProba[j]
-			\If{Proba <= Val}{
-				return j,AlphaVal[j]
-			}
-		}	
-		return N,AlphaVal[N]\\
-		
-		\caption{ReactiveGRASP}
-	\end{algorithm}
-	\subsubsection{Feasibility of our solution}
-	No journey have been took out of the feasible region of the solutions. 
-	I will introduce you how I manage to respect the consistency of a problem and so respect the feasibility of any solution found.\\
-	For this purpose I use two vector : \\
-	RM a vector of size \textit{n}, to store the current state of all the constraints(Saturated or not).\\
-	Freedom, a vector of size \textit{m}, to store the current state of all the variables(Free or not). \\
-	\begin{tabular}{L L L L L}
-		\vec{v_{RM}} : \\
-		& \forall rm_i \in \vec{v_{RM}} : & \\
-		& &rm_i &=&  \left\{\begin{array}{ll}
-			1 \quad if \, \exists x \in x_{i,:} =1 \\
-			0 \quad otherwise\\
-		\end{array}  \right\} \\
-		\vec{v_{freedom}} : \\
-		&  \forall x_i \in \vec{v_{freedom}}: & \\
-		& & x_i &=& \sum\limits_{j=1}^m - x_{j,i} \\
-	\end{tabular}
-	\\
-	Freedom is a vector full of zeros at the begin. 
-	When a variable \textit{x} is set to one all the other variables that are present in the constraint where \textit{x} is are decremented.\\
-	When a variable \textit{x} is set to zero all the other variables that are present in the constraint where \textit{x} is are incremented.
-	So a variable is free when its value in the vector is equal to zero.
-	\\The RM vector is mainly used to gain speed as the Freedom vector, moreover this last one allow us to know how many constraints are "blocking" a given variable to be set to one.\\
-	\begin{algorithm}[H]
-		\tcc{CurrentUsedVar : a vector containing the variable used,X : the index of the var to set to one}
-		\tcc{Freedom : the current state of the variables,Cost : the vector of cost, Solution : the current solution}
-		\tcc{Constraints : the constraint matrix,RMconstraints : the current state of the constraints}
-		\KwData{Constraints,Freedom,Cost,RMConstraints,Solution,CurrentUsedVar, X}
-		\KwResult{Boolean,Solution}
-		\tcc{X is the var to set to one, and }
-		\eIf{Freedom[X] == 0 and Solution[X] == 0}{
-			\For{j := 1 to M}{
-				
-				\If{Constraints[j,X] == 1 }{ 
-					
-					\eIf{RM[j] ==  0)}{
-						RM[j] =  1
-						
-						\For{i := 1 to N }{
-							\If{Constraints[j,i] == 1 }{
-								Freedom[i]-=1
-							}
-						}
-					}{
-						\Return False,CurrentSolution
-					}
-				}
-			}
-		}{
-			\Return False,CurrentSolution
-		}
-			
-		Solution[X] 		= 1
-		
-		CurrentUsedVar 		= add(CurrentUsedVar,x)
-		
-		ObjectiveValue 		+=Cost[X]		
-		
-		\Return True,Solution\\
-		
-		\caption{SetToOne}
-	\end{algorithm}
-	\subsection{Improving our solution}
-	I had a few different algorithm in order to improve my solution. One composed of Simulated Annealing using to different move,
-	an AddElseDrop and a Drop1AddMax.\\
-	And another one based on a kpexchange, setting 1 to 3 to zero and a maximum number to one.\\
-	\subsubsection{Simulated annealing}
-	I tried Simulated Annealing but because of the random move it operate it does not allow us to use GRASP construction at it's full potential. Why ? Because Reactive Grasp is a short term memory used at the same time as GRASP construction to auto-tune the $\alpha$ parameter for a given problem. If you use an algorithm like SA\footnote{Simulated Annealing} that doesn't take advantage of a good construction but build and improve it's solution based on dubious choice for the main part of it's run.
-	So the probability compute by reactive GRASP will be biased.
+	In my algorithm four solution will be selected using the roulette selection and then a binary tournament will select the two future parents. A binary tournament is simple :
 	
-	I will just show you some result I obtained and compare them with kp exchange. 
-	\subsubsection{A greedy local search}
-	I used a 22-exchange as greedy local-search.
-	\subsection{Results and performances}
-	\subsubsection{System and environment}
+	\begin{algorithm}
+		\KwData{$S_1,S_2,S_3,S_4$}
+		\KwResult{$P_1,P_2$}
+		\tcc{$S_i$ a solution $P_i$ a possible parent}
+		\eIf{$S_1 > S_2$}{
+			\eIf{$S_3 > S_4$}{
+				$P_1=S_1$
+				$P_2=S_3$
+			}{
+				$P_1=S_1$
+				$P_2=S_4$
+			}
+			}{
+			\eIf{$S_3 > S_4$}{
+				$P_1=S_2$
+				$P_2=S_3$
+			}{
+				$P_1=S_2$
+				$P_2=S_4$
+			}
+		}
+		return	$P_1$,$P_2$
+		\caption{Binary tournament}
+		\end{algorithm}
+	\pagebreak
+	\subsection{Crossover method}
+	The crossover method is the most important part of the algorithm. It will allow us to create new individual/solution from the other by crossing them. Multiple methods exist to do a crossover between to solution using a binary mask for example
+	Each crossover in my algorithm will produce two children combination of the parents. Because the method use for the crossover have a high chance to make the new solution infeasible we will have to repair the solution after.
+	It is a called the two-fusion operator\footnote{A Genetic Algorithm-Based Heuristic for Solving the Weighted
+		Maximum Independent Set and Some Equivalent Problems written by Mhand
+		Hifi}
+	Here is the crossover algorithm :
+	\begin{enumerate}
+		\item if  $P_{1,i} == P_{2,i}$
+		\subitem set $C_{1,i} = C_{2,i} = P_{1,i} $
+		\item else
+		\subitem set randomly  k et k' ($k \neq k'$) a value in {1,2}
+		\subitem set $ C_{1,j} = p _{k,j} $ with probability $p_k = f_k^f / f_k^f+f_{k'}^f$
+		\subsubitem and $ C_{1,j} = p _{k',j} $ with probability $1-p_k$
+		\subitem set $ C_{2,j} = p _{k',j} $ with probability $p_{k'} = f_{k'}^f / f_k^f+f_{k'}^f$
+		\subsubitem and $ C_{2,j} = p _{k',j} $ with probability $1-p_{k'}$
+	\end{enumerate}
+	\begin{algorithm}
+		\KwData{$P_1,P_2$}
+		\KwResult{$C_1,C_2$}
+		\tcc{$C_i$ a children, $P_i$ a parent}
+		\For{i := 1 to N}{	
+			\eIf{$P_{1,i} == P_{2,i}$}{
+					
+				$C_{1,i} = P_{1,i}$
+				
+				$C_{2,i} = P_{1,i}$
+			}{
+				$K_1$ = rand($1 \lor 2$)
+				
+				\eIf{$K_1 == 1$}
+				{$k_2 = 2$}
+				{$k_2 = 1$}
+				$p_{k1} = f_{k1}(x) / f_{k1}(x) +f_{k2}(x)$
+				
+				$p_{k2} = f_{k2}(x) / f_{k1}(x) +f_{k2}(x)$
+				
+				\eIf{rand() $ < p_{k1}$}
+				{$C_{1,i} = P_{k1,i}$}
+				{$C_{1,i} = P_{k2,i}$}
+				
+				\eIf{rand() $ < p_{k2}$}
+				{$C_{2,i} = P_{k2,i}$}
+				{$C_{2,i} = P_{k1,i}$}
+				
+			}
+		}
+		return	$C_1$,$C_2$
+		\caption{Crossover}
+	\end{algorithm}
+	\pagebreak
+	\subsection{Mutation}
+	\subsubsection{Repairing the solution}
+	We explain that the crossover method may create infeasible solution. So we have to repair the solution, we use a simple method.
+	Here is the algorithm :
+	
+	 \begin{algorithm}
+	 	\KwData{$S_1,C$}
+	 	\KwResult{$S_1$}
+	 	\tcc{$S_i$ a solution,$C$ the constraints}
+	 	\For{i := 1 to N}{	
+	 		\If{$S_{1,i} == 1$}{
+	 			\For{j := 1 to M}{
+	 				\If{$C_{j,i} == 1$}{
+	 					\For{$\forall S_{1,k} \in C_{j}$}{
+	 						\If{$S_{1,k} \neq S_{1,i}$ and $S_{1,k} = 1$  }{
+	 							$S_{1,k} = 0$
+	 						}
+	 					}	
+ 					}	
+ 				}
+	 		}
+	 	}
+	 	return	$S_1$
+	 	\caption{Repairing a solution}
+	 \end{algorithm}
+ 	\subsection{Improving a solution}
+ 	It's a greedy algorithm of descent, where he go throught the variable and if a variable  is free he set it to one.
+ 	\subsection{Parameters \& stop conditions}
+ 	Our algorithm don't have yet a mutation method because the crossover imply to repair and do LS on the solution, so it implicitly execute a mutation. 
+ 	
+ 	But we have a probability of crossover of 30\%, knowing that two children are produced at each crossover it is a really high probability of crossover.
+ 	
+ 	And our algorithm have two stop condition, when the number of generation is over the limit or when the population converge in value, we consider that an algorithm converge in value when $Stop_i$ is below 0.01 :
+ 	$$
+ 	Stop =  \frac{f_{max}(x) - f_{min}(x)}{f_{avg}(x)} 
+ 	$$
+ 	I set the number of generation to 30 but the algorithm will mainly stop because of the stop condition than because he reached the 30th generation. He will only reach the 30th generation for big sized problem.
+ 	\pagebreak
+	\section{Results and performances}
+	In this chapter we will compare the result obtained by our previous "heuristics" and the genetic algorithm. I will also introduce the environment the algorithm is running on.
+	\subsection{System and environment}
 	We solved the problem on the following system :
 	\begin{center}
 		\begin{tabular}{|c|c|}
@@ -459,170 +390,226 @@
 			\hline
 		\end{tabular}
 	\end{center}
+
+	Below the heuristic construction go with the LS, the generation of the population is included in the time of the GA.
 	We obtained the following result :
 	\begin{center}
 		\begin{tabular}{|c|c|c|c|c|c|c|}
 			\hline
-			Problem & \multicolumn{2}{|c|}{GLPK} & \multicolumn{2}{|c|}{Heuristic construction} & \multicolumn{2}{|c|}{Local search}\\
+			Problem  &\multicolumn{2}{|c|}{Grasp construction} & \multicolumn{2}{|c|}{Local search}& \multicolumn{2}{|c|}{Genetic algorithm}\\
 			\hline
-			Data  &  $\tilde{Z}$ & Time(s) & $\tilde{Z_{avg}}$ & Time(s)& $\tilde{Z_{avg}}$ & Time(s) \\
+			Data  &  $\tilde{Z_{avg}}$ & Time(s) & $\tilde{Z_{avg}}$ & Time(s)& $\tilde{Z_{avg}}$ & Time(s) \\
 			\hline
-			100rnd0100  & 372 & 2.302 & 338.755 & 0.0001 &  352.01 & 0.053 \\
+			100rnd0100  & 338.755 & 0.0001 &  352.01 & 0.05 & 369.12 & 0.18\\
 			\hline
-			100rnd0200  & 34  & 3.653 & 29.675  &  0.0001 &  33.985 & 0.0584 \\
+			100rnd0200  & 29.675  &  0.0001 &  33.985 & 0.06 & 32.0 & 0.1\\
 			\hline
-			100rnd0300  & 203   & 0.574 & 181.265   & 0.0555 & 185.81 & 0.0630675\\
+			100rnd0300  & 181.265   & 0.0555 & 185.81 & 0.06 &197.84 & 0.18\\
 			\hline
-			100rnd0400 & 16    & 3.937 & 13.295    & 0.0606 & 15.31 & 0.07259\\
-			\hline
-			
-			100rnd0500  & 639     & 0.000623319 & 617.24     & 0.0001 & 621.435 & 0.0226125\\
+			100rnd0400 & 13.295    & 0.0606 & 15.31 & 0.07 &15.16&0.1\\
 			\hline
 			
-			100rnd0600  & 64     &  0.000717666 & 61.5     & 0.0235 & 64 & 0.0067\\
+			100rnd0500  & 617.24     & 0.0001 & 621.435 & 0.02 & 631.48 & 0.04\\
 			\hline
 			
-			100rnd0700  & 503      &  0.000726351 & 491.715 & 0.0001025 & 497.7 & 0.0247024\\
+			100rnd0600  & 61.5     & 0.0235 & 64 & 0.0067 & 64.0 & 0.04\\
 			\hline
 			
-			100rnd0800  & 39      &  0.157 & 35.99 & 0.0437 &38.32 & 0.02034\\
+			100rnd0700  & 491.715 & 0.0001025 & 497.7 & 0.02
+			& 495.3 & 0.03\\
 			\hline
 			
-			100rnd0900  & 463       &  0.151 & 431.85     & 0.0001 & 446.84 & 0.037997\\
+			100rnd0800  & 35.99 & 0.0437 &38.32 & 0.02 &37.76& 0.03\\
 			\hline
 			
-			100rnd1000  & 40       &  0.422 & 36.17     & 0.0001 & 39.525 & 0.0402\\
+			100rnd0900  & 431.85     & 0.0001 & 446.84 & 0.04 &453.98&0.07\\
+			\hline
+			
+			100rnd1000 & 36.17     & 0.0001 & 39.525 & 0.04 &38.5&0.074\\
 			\hline
 		\end{tabular}
 	\end{center}
-	We are gonna compare two problems, the \textit{100rnd0100.dat} and the\textit{1000rnd0100.dat}.\\
-	Best value known : 372 \\
- 	Let's have a closer look to 200 runs of our algorithm on the problem \textit{100rnd0100.dat}.\\
-	I am now going to introduce the result found every 20 runs, there is going to be the average the minimum and the maximum.
-	Result every 20 iterations : 
-	\begin{center}
-			\begin{tabular}{|c|c|c|c|c|c|c|c|}
-				\hline
-				&\multicolumn{3}{|c|}{22Exchange}& \multicolumn{3}{|c|}{Simulated annealing} \\
-				\hline
-				Runs& $\tilde{Z_{min }}$ & $\tilde{Z_{avg}}$ & $\tilde{Z_{max}}$ & $\tilde{Z_{min }}$ & $\tilde{Z_{avg}}$ & $\tilde{Z_{max}}$\\ 
-				\hline
-				20 & 308 & 335 & 365 & 338 & 351 & 365\\
-				\hline
-				40& 305 & 338 & 356 & 328 & 352 & 372\\
-				\hline
-				60& 298 & 336 & 363 & 331 & 351 & 367\\
-				\hline
-				80& 313 & 335 & 362 & 331 & 351 & 372\\
-				\hline
-				100& 300 & 339 & 368& 329 & 350 & 369\\
-				\hline
-				120& 313 & 338 & 365 & 338 & 350 & 365\\
-				\hline
-				140& 308 & 336 & 362 & 328 & 351 & 369\\
-				\hline
-				160& 274 & 338 & 367 & 326 & 353 & 369\\
-				\hline
-				180& 314 & 337 & 368& 330 & 350 & 364\\
-				\hline
-				200& 291 & 338 & 368& 338 & 351 & 365\\
-				\hline
-			\end{tabular}
-	\end{center}
-	And here how the $ \alpha $ changed :
-	\begin{center}
-		\begin{tabular}{|c|c|c|c|c|c|}
-			\hline
-			\multirow{2}{*}{Before runs} & $\alpha$ value &0.5 & 0.6 & 0.75 & 0.9 \\
-			
-			&$\alpha$ probability & 0.25 & 0.25 & 0.25 & 0.25  \\
-			\hline
-			\multirow{2}{*}{After runs} & $\alpha$ with KPexchange & 0.264422& 0.228431& 0.273098& 0.234049 \\
-			
-			&$\alpha$ with CS &0.246867& 0.247649& 0.27542& 0.230065 \\
-			\hline
-		\end{tabular}
-	\end{center}
-	By looking at the result we observe no big difference except for the average value of $ \tilde{Z} $ that is bigger with Simulated Annealing than with a classic local search. But what is more interesting is the maximum found with the KP exchange, it is higher than the one found with CS. Even if it is not always the case it is important to notice it.\\
+	Here we can observe that the genetic algorithm is slower but find an higher average value in general.
+
+	We will compare now two algorithm the genetic algorithm and an algorithm based on multiple grasp construction where we apply a simulated annealing.
 	
-	
-	Let's have a closer look to 200 runs of our algorithm on the problem \textit{1000rnd0100.dat} :\\
-	Best value known : 67\\
-	I am now going to introduce the result found every 20 runs, there is going to be the average the minimum and the maximum. But this time we only KP-Exchange.
-	Result every 20 iterations : 
+	We will compare the two algorithm on these various sized problem :
 	\begin{center}
 		\begin{tabular}{|c|c|c|c|}
 			\hline
-			&\multicolumn{3}{|c|}{22Exchange}\\
+			Problem & N & M & Best Z \\
 			\hline
-			Runs& $\tilde{Z_{min }}$ & $\tilde{Z_{avg}}$ & $\tilde{Z_{max}}$ \\ 
+			\textit{100rnd0100.dat} & 100 & 500 & 372 \\
 			\hline
-			20 & 26 & 38 & 57 \\
+			\textit{200rnd0300.dat} & 200 & 1000 & 731 \\ 
 			\hline
-			40& 26 & 38 & 57 \\
+			\textit{500rnd0100.dat} & 500 & 2500 & 323  \\
 			\hline
-			60& 26 & 39 & 56 \\
-			\hline
-			80& 24 & 39 & 59 \\
-			\hline
-			100& 25 & 39 & 57\\
-			\hline
-			120& 24 & 38 & 57 \\
-			\hline
-			140& 25 & 40 & 56 \\
-			\hline
-			160& 25 & 40 & 55 \\
-			\hline
-			180& 27 & 40 & 57 \\
-			\hline
-			200& 27 & 39 & 59 \\
+			\textit{1000rnd0300.dat} & 1000 & 5000 & 661 \\
 			\hline
 		\end{tabular}
 	\end{center}
-	And here how the $ \alpha $ changed :
+		
+	Here are the different parameters used :
+	\begin{enumerate}
+		\item GRASP construction
+		\subitem $ \alpha = [0.5,0.6,0.75,0.90]$
+		\subitem $ p_{\alpha} = [0.25,0.25,0.25,0.25]$
+		\item Genetic algorithm
+		\subitem Size of the population : 100.
+		\subitem Generation : 30.
+		\subitem Probability of crossover : 30\%.
+		\item Simulated annealing
+		\subitem 20 construction
+		\subitem Cooling coefficient : 0.95
+		\subitem Init temperature : 1000
+		\subitem Step size : 100
+		\subitem Stop temperature : 1.0
+	\end{enumerate}
+	For the parameter of population, I think It should be sized according to the problem but I don't know how I correctly tune it. For example we can have a bigger population for small sized (100 or 200 variables) problem as it take a small amount of time. 
+	
+	But for bigger we could may be reduce it to be faster however it is not really logical as "more" solution will exist so a bigger population will be needed to express the diversity of possible solution.
+	
+	So for the problem \textit{500rnd0100.dat} and \textit{1000rnd0300.dat} we will run the genetic algorithm with different population size and stop conditions.
+	
 	\begin{center}
-		\begin{tabular}{|c|c|c|c|c|c|}
+			\begin{tabular}{|c|c|c|c|c|}
+				\hline
+				Problem &\multicolumn{4}{|c|}{Simulated annealing} \\
+				\hline
+				& $\tilde{Z_{min }}$ & $\tilde{Z_{avg}}$ & $\tilde{Z_{max}}$&Time(s) \\ 
+				\hline
+				100rnd0100.dat & 336 & 349.5 & 363 & 0.64  \\
+				\hline
+				200rnd0300.dat& 645 & 685.2 & 708  & 1.01  \\
+				\hline
+				500rnd0100.dat& 239 & 269.75 & 288  & 6.18 \\
+				\hline
+				1000rnd0300.dat& 457 & 524.15 & 573 &  12.38 \\
+				\hline
+			\end{tabular}
+	\end{center}
+	\begin{center}
+		\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
 			\hline
-			\multirow{2}{*}{Before runs} & $\alpha$ value &0.5 & 0.6 & 0.75 & 0.9 \\
-			
-			&$\alpha$ probability & 0.25 & 0.25 & 0.25 & 0.25  \\
+			Problem & \multicolumn{8}{|c|}{Genetic algorithm} \\
 			\hline
-			After runs& $\alpha$ with KPexchange & 0.180245& 0.210958& 0.278561& 0.330236 \\
-			
+			 & \multicolumn{2}{|c|}{Parameter} & \multicolumn{3}{|c|}{f(x)} & \multicolumn{3}{|c|}{Time}   \\
+			\hline
+			& Population & Limit  & $\tilde{Z_{min }}$ & $\tilde{Z_{avg}}$ & $\tilde{Z_{max}}$ & Min & Avg & Max\\
+			\hline
+			100rnd0100.dat & 50  & 0.01 
+			& 365 & 370.15 & 372 & 0.14 & 0.2 & 0.32 \\
+			\hline
+			100rnd0100.dat & 50  & 0.05
+			& 361 & 367.65 & 372 &0.08 &0.12 & 0.24 \\
+			\hline
+			100rnd0100.dat & 100 & 0.01 
+			& 367 & 371.55 & 372 & 0.22& 0.37 & 0.45 \\
+			\hline
+			100rnd0100.dat & 100 & 0.05 
+			& 365 & 367.15 & 372 & 0.18 &  0.23 & 0.31\\
+			\hline
+			200rnd0300.dat & 50  & 0.01 
+			&  696& 706 & 712 & 0.58 &0.73& 0.98 \\
+			\hline
+			200rnd0300.dat & 50  & 0.05
+			& 687 & 697.6 & 708 & 0.25 & 0.32 & 0.41
+			\\
+			\hline
+			200rnd0300.dat & 100 & 0.01
+			& 696 & 707.85 & 715 & 1.21 &1.49 & 2.16\\
+			\hline
+			200rnd0300.dat & 100 & 0.05
+			& 687 & 697.45 & 709 & 0.46 & 0.61 & 0.89
+			\\
+			\hline
+			500rnd0100.dat & 50  & 0.01 &
+			289 & 307.75 & 319 & 15.1 & 21.13 & 29.5
+			\\
+			\hline
+			500rnd0100.dat & 50  & 0.05
+			& 289& 298.5& 311& 7.16& 14.41 & 25.01
+			\\
+			\hline
+			500rnd0100.dat & 100 & 0.01
+			& 299 & 309.3 & 320 & 34.5 & 48.27 & 65.5
+			\\
+			\hline
+			500rnd0100.dat & 100 & 0.05 & 289 & 304.85 & 319 & 17 & 38.83 & 59.03
+			\\
+			\hline
+			1000rnd0300.dat & 50  & 0.01 & 568 & 589.4 & 634 & 68.06 & 110.04 & 141.96
+			\\
+			\hline
+			1000rnd0300.dat & 50  & 0.05 & 561 & 578.75 & 603 & 56 & 76.73 & 108 
+			\\
+			\hline
+			1000rnd0300.dat & 100 & 0.01 & 575 & 596 &611 & 194& 276 & 329
+			\\
+			\hline
+			1000rnd0300.dat & 100 & 0.05 & 567 & 593.6 & 628 & 179.2 & 230.5 & 322.54 
+			\\
 			\hline
 		\end{tabular}
 	\end{center}
-	Here we can notice a pretty big difference in the probability. I notice that the probability really do change for large problem. Maybe because there are more candidates to be in a RCL for a given alpha so there is a real difference between the RCL of an $ \alpha = 0.5$ and an $ \alpha = 0.8$  .
-	I noticed the same with other large problem like the \textit{2000rnd0100.dat}.
-	\\
-	\pagebreak	
+	We can see that the GA has generally better result and if it is fast for small problem it is long for medium/big sized problem. 
+	
+	We can see that increasing the value of the limit or lowering the size of the population drastically change the execution time at the cost of the global score of the popullation. 
+	
+	But we are here interested only in the best solution found so far and  not the "global value" of the population. 
+	If the population converging on a value can be a stop condition it does imply that all the population have the same value.
+	
+	Lowering the value of the limit could be done for any problem even if it could lead to be blocked in a local optimum.
+	
+	The couple GRASP + CS can found a solution in a really short amount of time compare to the GA but it is solution of lower quality. Also maybe if we modified some parameter to let it run as long as the GA it might found a better solution.
+	
+	I have tried, and it didn't, the solution are always worst or equal to the average solution of the GA.
+	
+	I collected the time spend in each function for the problem \textit{500rnd0100.dat} :
+	\begin{center}
+		\begin{tabular}{|c|c|c|}
+			Function Name & Role & Time \\
+			BinaryTournament & Select Parents & 0.000010 \\
+			CrossoverMethod & Create new childrens & 0.000049\\
+			RepairSolution & Repair a children & 0.017485 \\
+			AugmentIndividual & Improve a solution by a LS & 0.159890 \\
+			InsertAndReplaces & Insert child in ordered array & 0.000009 \\
+		\end{tabular}
+	\end{center}
+	AugmentIndividual and RepairSolution are the most time expensive function and they executed for every new children created.
+	The only improvement I found was to test if a children is equal to one of his parents, if it is none of this two function will be executed (Because the children is already a feasible and not improvable solution).
+	
+	I should maybe change the LS for a random mutation, it would have required more generation making the algorithm slower. It's a part that, if I had the time I would have develop and code.
+	\pagebreak
 	\subsection{Interpreting the results}
+	Here are some plot of my GA :
+	\begin{center}
+		\includegraphics[scale=0.5]{100rnd0100.png}
+		\includegraphics[scale=0.5]{500rnd0101.png}
+		\includegraphics[scale=0.5]{500rnd0102.png}
+		\includegraphics[scale=0.5]{1000rnd0300.png}
+	\end{center}
+	The decreasing f(x) is coming from the fact that the individual are sort in decreasing order by there objective value.
 	
-	But in this document we just see the use of meta-heuristics on reasonably small problem, I have been running my heuristics on bigger problems and it was way faster. Nevertheless I didn't include them in this report because I forget to record them.
+	We can see in the second plot that the generation 24 have nearly all here individual at the same level. They probably converge on the same solution.
 	
-	The construction of a good feasible solution is the part of the algorithm that get the solution really close to the best one. However, having a multiple start solution allow us to visit a bigger neighbourhood. 
-	The construction's heuristics is a good way to join the edge of the best solution, but it can also be the one that discard you from the best solution by making a bad choice from the beginning. Therefore questioning the construction algorithm in the local search's heuristics is a good idea but in our case here, because we have a multi start algorithm, it could be more logical to be greedy and simultaneously try to thin our neighbourhood search scope. Don't take it for granted.
+	As generation increase we see the worst value disappear and the diversity of our population decreasing.
 	
-	If we compare the time spend by the meta-heuristics and the MIP Solver it appears that on problem with a large number of constraints the heuristics have a really good score compare to the solver MIP. And there is also a really small difference between the value found by the heuristics and the value found by the solver.
+	We can also noticed on the 3rd and 4th plot that some individual are over the "convergence" bar. The GA may have stopped too soon because it could have used this individual to maybe reach a better solution.
 	
-	I think that there are many ways to improve my algorithm, and I improved it many time by the end of the time imparted.
-	Here is what I changed :
-	\begin{enumerate}
-		\item I kicked out of the problem the variables that are not in any constraints. BY setting them to one without having any possibility to set them to 0.
-		\subitem Maybe I could also delete the row in the constraints matrix and everywhere in the problem but it look pretty difficult.
-		\item Therefore I noticed that we can order the array containing the utilities. so we can stop going through it when building a solution with GRASP.
-		\subitem I now store an array containing the value of the current var. So no need to seek them in the full variables array every-time I need to know which one is free.
-		
-		\item I noticed that I don't need to update a constraint matrix copy to see which constraints is overload or which variables is not free.
-	\end{enumerate}
-	And many other changes..
+	\section{Conclusion}
 	
-	To make a better heuristic I think we need :
-	\begin{enumerate}
-		\item To learn some maths tricks to simplify some type of problem.
-		\subitem The ones who are not obvious...
-		\item To study more deeply a type of problem and data-structures that fit it.
-		\item To spend more time studying heuristics in order to see from a different prism this type of problem.
-	\end{enumerate}
-		
+	This last homework was interesting thanks to the multiple strategy you could use in a GA and the freedom it offer. I would have like to introduce some other function, like the random add of a new individual or a real mutation. But it didn't looked necessary on the kind of problem we were running our algorithm.
+	
+	Different problem allowing more complex strategy could be fun and may be learn some tricks that are applicable to some kind of problem could be interesting. 
+	
+	I've tried to implement and use sparse matrix in the GA because with my previous work it was too slow. I did it successfully but there is still the construction algorithm based on GRASP that use my previous work. I began to work on a construction algorithm made specially for the GA and independent of all my previous work but I didn't had the time to finish it.
+	
+	I've also been using Julia embedded function as much as possible to make the program faster, but it happen once that a Julia function was slower than my code(Because of a stop condition).
+	
+	I was afraid to use VNS or Path-Relinking as a LS because it is easy, fast and does not need tons of new data to be used.However as it could have lowered the diversity of the population I decided to not.
+	
+	I don't know if it was possible to just use a crossover and mutation in my GA, as it is a highly constraint problem it looked difficult to rely only on these two method to get a good solution.
+	
 \end{document}
