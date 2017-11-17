@@ -16,7 +16,9 @@
 \contentsline {subsubsection}{\numberline {2.5.1}Repairing the solution}{10}
 \contentsline {subsection}{\numberline {2.6}Improving a solution}{10}
 \contentsline {subsection}{\numberline {2.7}Parameters \& stop conditions}{10}
-\contentsline {section}{\numberline {3}Results and performances}{11}
-\contentsline {subsection}{\numberline {3.1}System and environment}{11}
-\contentsline {subsection}{\numberline {3.2}Interpreting the results}{14}
-\contentsline {section}{\numberline {4}Conclusion}{16}
+\contentsline {section}{\numberline {3}Results and performances}{12}
+\contentsline {subsection}{\numberline {3.1}System and environment}{12}
+\contentsline {subsection}{\numberline {3.2}Results}{12}
+\contentsline {subsection}{\numberline {3.3}Performance}{14}
+\contentsline {subsection}{\numberline {3.4}Interpreting the results}{16}
+\contentsline {section}{\numberline {4}Conclusion}{18}

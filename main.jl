@@ -51,7 +51,7 @@ function main()
    N::Int32             = 100
    Ngen::Int32          = 30
    Grasp1::Grasp        = Grasp([0.50,0.65,0.75,0.80,0.90],[0.20,0.20,0.20,0.20,0.20])
-   filename = string("pb_2000rnd0100.dat")
+   filename = string("pb_100rnd0100.dat")
    Pb::Problem          = ReadFile(string("./Data/",filename))
    println("Beginning evolution")
    println("Problem is ",filename)
@@ -81,7 +81,7 @@ function main()
 
          end
 
-         println("Pop size :",g," limit : ",l)
+         println("Pop size : ",g," Stop limit : ",l)
          println("Max : ",max ," | Min : ",min)
          println("Average time for GRASP construction : ", round(TimeCons/maxit,2))
          println("Average time for genetic : ", round(TimeG/maxit,2))

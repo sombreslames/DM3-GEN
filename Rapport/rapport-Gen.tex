@@ -354,8 +354,14 @@
 	 	return	$S_1$
 	 	\caption{Repairing a solution}
 	 \end{algorithm}
+ 	This the simple implementation of \textit{RepairSolution},I did it differently using sparse matrix characteristics.
  	\subsection{Improving a solution}
- 	It's a greedy algorithm of descent, where he go throught the variable and if a variable  is free he set it to one.
+ 	It's a greedy algorithm of descent, where he go through the variable and if a variable  is free he set it to one.
+ 	I just implemented a greedy local search adding all possible variables than can be added to the solution while maintaining the feasibility of the solution.
+ 	\begin{enumerate}\item $\forall V \notin Solution$
+ 		\subitem if $ V  \cup Solution $ is a feasible solution
+ 		\subsubitem then $ Solution = V \cup Solution$ 
+ 	\end{enumerate}
  	\subsection{Parameters \& stop conditions}
  	Our algorithm don't have yet a mutation method because the crossover imply to repair and do LS on the solution, so it implicitly execute a mutation. 
  	
@@ -390,7 +396,7 @@
 			\hline
 		\end{tabular}
 	\end{center}
-
+	\subsection{Results}
 	Below the heuristic construction go with the LS, the generation of the population is included in the time of the GA.
 	We obtained the following result :
 	\begin{center}
@@ -553,7 +559,7 @@
 			\hline
 		\end{tabular}
 	\end{center}
-	We can see that the GA has generally better result and if it is fast for small problem it is long for medium/big sized problem. 
+	We can see that the GA has generally better result and if it is fast for small problem it is long for medium/big sized problem.
 	
 	We can see that increasing the value of the limit or lowering the size of the population drastically change the execution time at the cost of the global score of the popullation. 
 	
@@ -565,7 +571,7 @@
 	The couple GRASP + CS can found a solution in a really short amount of time compare to the GA but it is solution of lower quality. Also maybe if we modified some parameter to let it run as long as the GA it might found a better solution.
 	
 	I have tried, and it didn't, the solution are always worst or equal to the average solution of the GA.
-	
+	\subsection{Performance}
 	I collected the time spend in each function for the problem \textit{500rnd0100.dat} :
 	\begin{center}
 		\begin{tabular}{|c|c|c|}
@@ -577,10 +583,77 @@
 			InsertAndReplaces & Insert child in ordered array & 0.000009 \\
 		\end{tabular}
 	\end{center}
-	AugmentIndividual and RepairSolution are the most time expensive function and they executed for every new children created.
+	\textit{AugmentIndividual} and \textit{RepairSolution} are the most time expensive function and they executed for every new children created.
 	The only improvement I found was to test if a children is equal to one of his parents, if it is none of this two function will be executed (Because the children is already a feasible and not improvable solution).
+	I measured the time used by \textit{AugmentIndividual} and \textit{RepairSolution} and the percent of time used in the alorithm was around 90\% \textit{AugmentIndividual} for and 7\% for\textit{RepairSolution}.
 	
-	I should maybe change the LS for a random mutation, it would have required more generation making the algorithm slower. It's a part that, if I had the time I would have develop and code.
+	I used in a really stupid way the sparse matrix that's why it was so long.
+	\pagebreak
+	At the end, I did change my function and now the balance change from 90\% to 7 \% for the \textit{AugmentIndividual}. And now \textit{RepairSolution} used around 90\% of the time but it does not use more time than before.
+	
+	It is now way faster. Here is the mean time for each problem used in example :
+	\begin{center}
+		\begin{tabular}{|c|c|c|c|c|c|}
+			\hline
+			Problem & \multicolumn{5}{|c|}{Genetic algorithm} \\
+			\hline
+			& \multicolumn{2}{|c|}{Parameter} & \multicolumn{3}{|c|}{Time}  \\
+			\hline
+			& Population & Limit & Min & Avg & Max\\
+			\hline
+			100rnd0100.dat & 50  & 0.01 & 0.10& 0.11& 0.13 \\
+			\hline
+			100rnd0100.dat & 50  & 0.05  & 0.08& 0.09& 0.09\\
+			\hline
+			100rnd0100.dat & 100 & 0.01  & 0.15& 0.16& 0.18\\
+			\hline
+			100rnd0100.dat & 100 & 0.05 & 0.13& 0.15& 0.16\\
+			\hline
+			200rnd0300.dat & 50  & 0.01 & 0.45& 0.5& 0.57 \\
+			\hline
+			200rnd0300.dat & 50  & 0.05 & 0.35& 0.35& 0.35			\\
+			\hline
+			200rnd0300.dat & 100 & 0.01 & 0.87& 1.04& 1.20\\
+			\hline
+			200rnd0300.dat & 100 & 0.05  & 0.41& 0.49& 0.53
+			\\
+			\hline
+			500rnd0100.dat & 50  & 0.01 & 1.19 & 1.64 & 1.85
+			
+			\\
+			\hline
+			500rnd0100.dat & 50  & 0.05 & 1.02 &1.14&1.20
+			\\
+			\hline
+			500rnd0100.dat & 100 & 0.01
+			& 3.90 & 4.1 & 4.49
+			\\
+			\hline
+			500rnd0100.dat & 100 & 0.05 & 
+			2.99 & 3.78 & 4.85 
+			\\
+			\hline
+			1000rnd0300.dat & 50  & 0.01 & 6.35 & 7.94 & 9.09
+			\\
+			\hline
+			1000rnd0300.dat & 50  & 0.05 & 3.44 & 4.09 & 5.21
+			\\
+			\hline
+			1000rnd0300.dat & 100 & 0.01 &
+			18.37 & 26.03 & 34.04 
+			\\
+			\hline
+			1000rnd0300.dat & 100 & 0.05 & 
+			14.48 & 19.22 & 21.54
+			\\
+			\hline
+		\end{tabular}
+	\end{center}
+	So i am pretty proud now, even if I still have some idea on how to improve different function. The average solution found are the same, just the execution time have been reduced.
+	I also improved \textit{RepairSolution}  to use efficiently sparse matrix.
+	It now run in less than three second for a problem with two thousand variables.
+
+	Now the weak point is the GRASP construction that is the slowest part of the program.
 	\pagebreak
 	\subsection{Interpreting the results}
 	Here are some plot of my GA :
@@ -598,15 +671,21 @@
 	
 	We can also noticed on the 3rd and 4th plot that some individual are over the "convergence" bar. The GA may have stopped too soon because it could have used this individual to maybe reach a better solution.
 	
+	Adding a mutation could be interesting, it will widen the search space.
+	
 	\section{Conclusion}
 	
 	This last homework was interesting thanks to the multiple strategy you could use in a GA and the freedom it offer. I would have like to introduce some other function, like the random add of a new individual or a real mutation. But it didn't looked necessary on the kind of problem we were running our algorithm.
 	
-	Different problem allowing more complex strategy could be fun and may be learn some tricks that are applicable to some kind of problem could be interesting. 
+	Different problem allowing more complex strategy could be fun and may be learn some tricks that are applicable to some specific type of problem could be interesting. 
 	
 	I've tried to implement and use sparse matrix in the GA because with my previous work it was too slow. I did it successfully but there is still the construction algorithm based on GRASP that use my previous work. I began to work on a construction algorithm made specially for the GA and independent of all my previous work but I didn't had the time to finish it.
 	
 	I've also been using Julia embedded function as much as possible to make the program faster, but it happen once that a Julia function was slower than my code(Because of a stop condition).
+	
+	But I actually failed to use correctly sparse matrix, I didn't know how to get through them to search a precise index or variable so I used a function called \textit{find} and \textit{findnext} but I noticed later than more than 90\% of the execution time was used by these function in the \textit{AugmentIndividual} function. 
+	
+	Thanks to you I could spend a couple hours more on my GA, and it's now faster than it have ever been.(And correct)
 	
 	I was afraid to use VNS or Path-Relinking as a LS because it is easy, fast and does not need tons of new data to be used.However as it could have lowered the diversity of the population I decided to not.
 	

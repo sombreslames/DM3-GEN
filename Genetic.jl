@@ -24,7 +24,6 @@ function InitPopulation(Pb::Problem,N::Int32,Grasp::Grasp)
 end
 
 function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int32,stoplimit::Float64)
-   it = 0
 
    for i  = 1:1:Ngen
        for j = 1:2:NPop
@@ -44,7 +43,6 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
             InsertAndReplace(Pb,Population,child2)
             InsertAndReplace(Pb,Population,child1)
          end
-         it += 2
       end
       #=println("###################### Generation Info #####################")
       println("# Generation : ",i)
@@ -58,28 +56,7 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
    end
    return Population
 end
-# VERSION PRECEDENTE DE LA REPARATION
-# TRES LENTS
-function RepairSolution2Fail(Pb::Problem,Indi::Genome)
-   size = length(Pb.IndexRow)
-   ConstraintDone = falses(Pb.NBconstraints)
-   for i in 1:1:size
-      if Indi.Solution[Pb.IndexColumn[i]] == 1 && !ConstraintDone[Pb.IndexRow[i]]
-         Pos = findfirst(Pb.IndexRow,Pb.IndexRow[i])
-         while Pos != 0
-            if Pb.IndexColumn[Pos] != Pb.IndexColumn[i]
-               if Indi.Solution[Pb.IndexColumn[Pos]] == 1
-                  Indi.Solution[Pb.IndexColumn[Pos]] = 0
-                  Indi.CurrentObjectiveValue -= Pb.Variables[Pb.IndexColumn[Pos]]
-               end
-            end
-            Pos = findnext(Pb.IndexRow,Pb.IndexRow[i],Pos+1)
-         end
-         ConstraintDone[Pb.IndexRow[i]] = true
-      end
-   end
-   return Indi
-end
+
 #VERSION ACTUELLE, TRES RAPIDE
 function RepairSolution(Pb::Problem,Indi::Genome)
    size = length(Pb.IndexRow)
@@ -107,46 +84,7 @@ function RepairSolution(Pb::Problem,Indi::Genome)
    end
    return Indi
 end
-#VERSION PRECEDENTE DE LA LS tres lents
-function AugmentIndividual2Fail(Pb::Problem,Indi::Genome)
-   #Sauvegarder les contraintes par lesquel on est deja passe
-   size = length(Pb.IndexColumn)
-   timesearch = 0.0
-   Freedom = falses(Pb.NBvariables)
-   tot = @elapsed for i = 1:1:Pb.NBvariables
-      if Indi.Solution[i] == 0 && Freedom[i] == false
-         Ok = false
-         timesearch += @elapsed PosV = findfirst(Pb.IndexColumn,i)
-         while !Ok && Pb.IndexColumn[PosV] == i
-            PosC = findfirst(Pb.IndexRow,Pb.IndexRow[PosV])
-            #Vecteur freedom pour toute les contraintes de la varaibles, pas free si on met la variable a 1
-            while PosC != 0
-               #Vecteur freedom pour toute la contrainte , pas free si il y a une variable a un dans la contrainte
-               if Indi.Solution[Pb.IndexColumn[PosC]] == 1
-                  Ok = true
-                  break
-               end
-               timesearch += @elapsed PosC = findnext(Pb.IndexRow,Pb.IndexRow[PosV],PosC+1)
-            end
-            if PosV < size
-               PosV+=1
-            else
-               break
-            end
-            #timesearch += @elapsed PosV = findnext(Pb.IndexColumn,i,PosV+1)
-         end
-         if Ok == false
-            Indi.Solution[i] = 1
-            Indi.CurrentObjectiveValue += Pb.Variables[i]
-         end
-      else
-         #Bloque les variables contenus dans eurs contraintes
-      end
-   end
-   #println("AUGMENT Time to search : ",round( (timesearch/tot) *100,2))
 
-   return Indi
-end
 #Version courante de la LS top qualite
 function AugmentIndividual(Pb::Problem,Indi::Genome)
    size = length(Pb.IndexColumn)
@@ -264,4 +202,67 @@ function InsertAndReplace(Pb::Problem,Population::Vector{Genome},Indi::Genome)
    Pb.SumObj -= Population[PopSize].CurrentObjectiveValue
    deleteat!(Population,PopSize)
    Pb.MinObj = Population[PopSize-1].CurrentObjectiveValue
+end
+
+#VERSION PRECEDENTE DE LA LS tres lents
+function AugmentIndividual2Fail(Pb::Problem,Indi::Genome)
+   #Sauvegarder les contraintes par lesquel on est deja passe
+   size = length(Pb.IndexColumn)
+   timesearch = 0.0
+   Freedom = falses(Pb.NBvariables)
+   tot = @elapsed for i = 1:1:Pb.NBvariables
+      if Indi.Solution[i] == 0 && Freedom[i] == false
+         Ok = false
+         timesearch += @elapsed PosV = findfirst(Pb.IndexColumn,i)
+         while !Ok && Pb.IndexColumn[PosV] == i
+            PosC = findfirst(Pb.IndexRow,Pb.IndexRow[PosV])
+            #Vecteur freedom pour toute les contraintes de la varaibles, pas free si on met la variable a 1
+            while PosC != 0
+               #Vecteur freedom pour toute la contrainte , pas free si il y a une variable a un dans la contrainte
+               if Indi.Solution[Pb.IndexColumn[PosC]] == 1
+                  Ok = true
+                  break
+               end
+               timesearch += @elapsed PosC = findnext(Pb.IndexRow,Pb.IndexRow[PosV],PosC+1)
+            end
+            if PosV < size
+               PosV+=1
+            else
+               break
+            end
+            #timesearch += @elapsed PosV = findnext(Pb.IndexColumn,i,PosV+1)
+         end
+         if Ok == false
+            Indi.Solution[i] = 1
+            Indi.CurrentObjectiveValue += Pb.Variables[i]
+         end
+      else
+         #Bloque les variables contenus dans eurs contraintes
+      end
+   end
+   #println("AUGMENT Time to search : ",round( (timesearch/tot) *100,2))
+
+   return Indi
+end
+# VERSION PRECEDENTE DE LA REPARATION
+# TRES LENTS
+function RepairSolution2Fail(Pb::Problem,Indi::Genome)
+   size = length(Pb.IndexRow)
+   ConstraintDone = falses(Pb.NBconstraints)
+   for i in 1:1:size
+      if Indi.Solution[Pb.IndexColumn[i]] == 1 && !ConstraintDone[Pb.IndexRow[i]]
+         Pos = findfirst(Pb.IndexRow,Pb.IndexRow[i])
+         while Pos != 0
+            if Pb.IndexColumn[Pos] != Pb.IndexColumn[i]
+               if Indi.Solution[Pb.IndexColumn[Pos]] == 1
+                  Indi.Solution[Pb.IndexColumn[Pos]] = 0
+                  Indi.CurrentObjectiveValue -= Pb.Variables[Pb.IndexColumn[Pos]]
+               end
+            end
+            Pos = findnext(Pb.IndexRow,Pb.IndexRow[i],Pos+1)
+         end
+         ConstraintDone[Pb.IndexRow[i]] = true
+      end
+   end
+   return Indi
 end
