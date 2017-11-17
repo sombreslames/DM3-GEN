@@ -10,6 +10,10 @@ type Problem
    NBvariables::Int32
    NBconstraints::Int32
    Variables::Vector{Int32}
+   IndexRow::Vector{Int32}
+   IndexColumn::Vector{Int32}
+   IndexRowOR::Vector{Int32}
+   IndexColumnOR::Vector{Int32}
    LeftMembers_Constraints::SparseMatrixCSC{Int32,Int32}
    Utility::Array{Float64,2}
    Bonus::Int64
@@ -41,36 +45,50 @@ include("heuristics_spp.jl")
 include("ToolsAndPlot.jl")
 include("Genetic.jl")
 function main()
-   Time::Float64        = 0.0
+   TimeG::Float64       = 0.0
+   TimeCons::Float64    = 0.0
    AVG                  = 0
    N::Int32             = 100
    Ngen::Int32          = 30
    Grasp1::Grasp        = Grasp([0.50,0.65,0.75,0.80,0.90],[0.20,0.20,0.20,0.20,0.20])
-   filename = string("pb_100rnd0100.dat")
+   filename = string("pb_2000rnd0100.dat")
    Pb::Problem          = ReadFile(string("./Data/",filename))
-   println("Beginning evolution #IDONTBELIEVEINIT")
+   println("Beginning evolution")
+   println("Problem is ",filename)
    max = 0
    min = typemax(Int32)
    sv = Vector{Vector{Genome}}(Ngen)
    ngen = 0
    maxit = 5
-   for i = 1:1:maxit
-      tic()
-      Pb,Population::Vector{Genome} = InitPopulation(Pb,N,Grasp1)
-      Population = Evolution(Population,Pb,N,Ngen,0.01)
-      Time+= toc()
-      AVG+=Population[1].CurrentObjectiveValue
-      if Population[1].CurrentObjectiveValue < min
-         min = Population[1].CurrentObjectiveValue
-      end
-      if Population[1].CurrentObjectiveValue > max
-         max = Population[1].CurrentObjectiveValue
-      end
+   for l in [0.01,0.05]
+      for g::Int32 in [50,100]
+         max = 0
+         min = typemax(Int32)
+         AVG                  = 0
+         TimeCons = 0.0
+         TimeG = 0.0
+         for i = 1:1:maxit
+            TimeCons += @elapsed Pb,Population::Vector{Genome} = InitPopulation(Pb,N,Grasp1)
+            TimeG += @elapsed Population = Evolution(Population,Pb,g,Ngen,l)
 
+            AVG+=Population[1].CurrentObjectiveValue
+            if Population[1].CurrentObjectiveValue < min
+               min = Population[1].CurrentObjectiveValue
+            end
+            if Population[1].CurrentObjectiveValue > max
+               max = Population[1].CurrentObjectiveValue
+            end
+
+         end
+
+         println("Pop size :",g," limit : ",l)
+         println("Max : ",max ," | Min : ",min)
+         println("Average time for GRASP construction : ", round(TimeCons/maxit,2))
+         println("Average time for genetic : ", round(TimeG/maxit,2))
+         println("Average known value is ",round(AVG/maxit,2))
+      end
    end
-   println("Max : ",max ," | Min : ",min)
-   println("Average time : ", round(Time/maxit,2))
-   println("Average known value is ",round(AVG/maxit,2))
+
    #PlotGeneticAlgorithm(sv,N,ngen,filename)
 end
 

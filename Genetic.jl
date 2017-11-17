@@ -18,7 +18,6 @@ function InitPopulation(Pb::Problem,N::Int32,Grasp::Grasp)
    println("# Moyenne : ",TotSum/N)
    println("# MIN : ", Population[N].CurrentObjectiveValue, " | MAX : ",Population[1].CurrentObjectiveValue)
    println("############################################################")=#
-
    Pb.MinObj = Population[N].CurrentObjectiveValue
    Pb.SumObj = TotSum
    return Pb,Population
@@ -26,51 +25,24 @@ end
 
 function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int32,stoplimit::Float64)
    it = 0
+
    for i  = 1:1:Ngen
        for j = 1:2:NPop
          #here repair and mutate
          ProbMut = rand(RdSeed)
-         if ProbMut > 0.3
+         if ProbMut < 0.7
             p1,p2          = BinaryTourmanent(Population,NPop,Pb)
             child1,child2  = CrossoverMethod(Pb,[Population[p1],Population[p2]])
-
-            #PLus divers en pop mais converge moins vite
-            #=if child1.Solution == child2.Solution
-               if child1.Solution != Population[p1].Solution
-                  if child1.Solution != Population[p2].Solution
-                     child1 = RepairAndMutationSparse(Pb,child1)
-                     child1 = AugmentIndividual(Pb,child1)
-                  end
-               end
-
-            else
-               if child1.Solution != Population[p1].Solution
-                  if child1.Solution != Population[p2].Solution
-                     child1 = RepairAndMutationSparse(Pb,child1)
-                     child1 = AugmentIndividual(Pb,child1)
-                  end
-               end
-               if child2.Solution != Population[p1].Solution
-                  if child2.Solution != Population[p2].Solution
-                     child2 = RepairAndMutationSparse(Pb,child2)
-                     child2 = AugmentIndividual(Pb,child2)
-                     InsertAndReplace(Pb,Population,child2)
-                  end
-               end
-            end
-            InsertAndReplace(Pb,Population,child1)=#
-            #Converge + vite mais moins divers en pop
             if child1.Solution != Population[p1].Solution && child1.Solution != Population[p2].Solution
-               child1 = RepairAndMutationSparse(Pb,child1)
+               child1 = RepairSolution(Pb,child1)
                child1 = AugmentIndividual(Pb,child1)
             end
             if child2.Solution != Population[p1].Solution && child2.Solution != Population[p2].Solution
-               child2 = RepairAndMutationSparse(Pb,child2)
+               child2 = RepairSolution(Pb,child2)
                child2 = AugmentIndividual(Pb,child2)
             end
             InsertAndReplace(Pb,Population,child2)
             InsertAndReplace(Pb,Population,child1)
-
          end
          it += 2
       end
@@ -78,7 +50,7 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
       println("# Generation : ",i)
       println("# Moyenne : ",round(Pb.SumObj/NPop,2))
       println("# MIN : ", Pb.MinObj, " | MAX : ",Population[1].CurrentObjectiveValue)
-      println("# Time spend : ",time, "s | ",round((it/(Ngen*NPop))*100,2),"% done")
+      println("# Time spend : ",totalT / Supertot, "s | ",round((it/(Ngen*NPop))*100,2),"% done")
       println("############################################################")=#
       if ((Population[1].CurrentObjectiveValue - Population[NPop].CurrentObjectiveValue) / (Pb.SumObj/NPop)) < stoplimit
          break
@@ -86,66 +58,121 @@ function Evolution(Population::Vector{Genome},Pb::Problem,NPop::Int32,Ngen::Int3
    end
    return Population
 end
-function RepairAndMutationSparse(Pb::Problem,Indi::Genome)
-
-   #=println("###################### Repair Info ######################")
-   println("# Before repair : ",Indi.CurrentObjectiveValue)=#
-   IndexRow,IndexColumn,Value = findnz(Pb.LeftMembers_Constraints)
-   size = length(IndexRow)
-   SaturatedCtrt = 0
+# VERSION PRECEDENTE DE LA REPARATION
+# TRES LENTS
+function RepairSolution2Fail(Pb::Problem,Indi::Genome)
+   size = length(Pb.IndexRow)
+   ConstraintDone = falses(Pb.NBconstraints)
    for i in 1:1:size
-      if Indi.Solution[IndexColumn[i]] == 1
-
-         Pos = findfirst(IndexRow,IndexRow[i])
-         SaturatedCtrt = 0
+      if Indi.Solution[Pb.IndexColumn[i]] == 1 && !ConstraintDone[Pb.IndexRow[i]]
+         Pos = findfirst(Pb.IndexRow,Pb.IndexRow[i])
          while Pos != 0
-            if IndexColumn[Pos] != IndexColumn[i]
-               if Indi.Solution[IndexColumn[Pos]] == 1
-                  Indi.Solution[IndexColumn[Pos]] = 0
-                  Indi.CurrentObjectiveValue -= Pb.Variables[IndexColumn[Pos]]
+            if Pb.IndexColumn[Pos] != Pb.IndexColumn[i]
+               if Indi.Solution[Pb.IndexColumn[Pos]] == 1
+                  Indi.Solution[Pb.IndexColumn[Pos]] = 0
+                  Indi.CurrentObjectiveValue -= Pb.Variables[Pb.IndexColumn[Pos]]
                end
             end
-            Pos = findnext(IndexRow,IndexRow[i],Pos+1)
+            Pos = findnext(Pb.IndexRow,Pb.IndexRow[i],Pos+1)
+         end
+         ConstraintDone[Pb.IndexRow[i]] = true
+      end
+   end
+   return Indi
+end
+#VERSION ACTUELLE, TRES RAPIDE
+function RepairSolution(Pb::Problem,Indi::Genome)
+   size = length(Pb.IndexRow)
+   Same = Pb.IndexRowOR[1]
+   Saturated = false
+   for i in 1:1:size
+      if Pb.IndexRowOR[i] == Same
+         if Indi.Solution[Pb.IndexColumnOR[i]] == 1
+            if Saturated == false
+               Saturated = true
+            else
+               Indi.Solution[Pb.IndexColumnOR[i]] = 0
+               Indi.CurrentObjectiveValue -= Pb.Variables[Pb.IndexColumnOR[i]]
+            end
+         end
+      else
+         Same = Pb.IndexRowOR[i]
+         Saturated = false
+         if Indi.Solution[Pb.IndexColumnOR[i]] == 1
+            if Saturated == false
+               Saturated = true
+            end
          end
       end
    end
-
-   #=println("# After repair : ",Indi.CurrentObjectiveValue)
-   println("############################################################")=#
-
    return Indi
 end
-
-function AugmentIndividual(Pb::Problem,Indi::Genome)
-   IndexRow,IndexColumn,Value = findnz(Pb.LeftMembers_Constraints)
-   #=println("###################### Mutation Info ######################")
-   println("# Before mutation : ",Indi.CurrentObjectiveValue)=#
-   #Freedom = zeros(Int32,Pb.NBvariables)
-   size = length(IndexColumn)
-   for i = 1:1:Pb.NBvariables
-      if Indi.Solution[i] == 0 #&& Freedom[i] == 0
+#VERSION PRECEDENTE DE LA LS tres lents
+function AugmentIndividual2Fail(Pb::Problem,Indi::Genome)
+   #Sauvegarder les contraintes par lesquel on est deja passe
+   size = length(Pb.IndexColumn)
+   timesearch = 0.0
+   Freedom = falses(Pb.NBvariables)
+   tot = @elapsed for i = 1:1:Pb.NBvariables
+      if Indi.Solution[i] == 0 && Freedom[i] == false
          Ok = false
-         PosV = findfirst(IndexColumn,i)
-         while Ok  == false && PosV != 0 && IndexColumn[PosV] == i
-            PosC = findfirst(IndexRow,IndexRow[PosV])
+         timesearch += @elapsed PosV = findfirst(Pb.IndexColumn,i)
+         while !Ok && Pb.IndexColumn[PosV] == i
+            PosC = findfirst(Pb.IndexRow,Pb.IndexRow[PosV])
+            #Vecteur freedom pour toute les contraintes de la varaibles, pas free si on met la variable a 1
             while PosC != 0
-               if Indi.Solution[IndexColumn[PosC]] == 1
+               #Vecteur freedom pour toute la contrainte , pas free si il y a une variable a un dans la contrainte
+               if Indi.Solution[Pb.IndexColumn[PosC]] == 1
                   Ok = true
                   break
                end
-               #Freedom[IndexColumn[PosC]] -= 1
-               PosC = findnext(IndexRow,IndexRow[PosV],PosC+1)
+               timesearch += @elapsed PosC = findnext(Pb.IndexRow,Pb.IndexRow[PosV],PosC+1)
             end
-            PosV = findnext(IndexColumn,i,PosV+1)
+            if PosV < size
+               PosV+=1
+            else
+               break
+            end
+            #timesearch += @elapsed PosV = findnext(Pb.IndexColumn,i,PosV+1)
          end
          if Ok == false
             Indi.Solution[i] = 1
             Indi.CurrentObjectiveValue += Pb.Variables[i]
          end
+      else
+         #Bloque les variables contenus dans eurs contraintes
       end
    end
-   #=println("# After mutation : ",Indi.CurrentObjectiveValue)
-   println("############################################################")=#
+   #println("AUGMENT Time to search : ",round( (timesearch/tot) *100,2))
+
+   return Indi
+end
+#Version courante de la LS top qualite
+function AugmentIndividual(Pb::Problem,Indi::Genome)
+   size = length(Pb.IndexColumn)
+   FreedomC = falses(Pb.NBconstraints)
+   itVar = 0
+   for i = 1:1:Pb.NBvariables
+      if Indi.Solution[i] == 0
+         Ok = false
+         PosV = searchsortedfirst(Pb.IndexColumn,i)
+         while !Ok && PosV < size && Pb.IndexColumn[PosV] == i
+            PosC = searchsortedfirst(Pb.IndexRowOR,Pb.IndexRow[PosV])
+            while Pb.IndexRowOR[PosC] == Pb.IndexRow[PosV] && PosC<size
+               if Indi.Solution[Pb.IndexColumnOR[PosC]] == 1
+                  Ok = true
+                  break
+               end
+               PosC += 1
+            end
+            PosV += 1
+         end
+         if !Ok
+            Indi.Solution[i] = 1
+            Indi.CurrentObjectiveValue += Pb.Variables[i]
+         end
+      end
+   end
    return Indi
 end
 
@@ -194,7 +221,6 @@ end
 function CrossoverMethod(Pb::Problem,Parents::Vector{Genome})
    Child1 = Genome(Pb.Bonus,zeros(Int32,Pb.NBvariables))
    Child2 = Genome(Pb.Bonus,zeros(Int32,Pb.NBvariables))
-   #Soyons malin utilisons les probabilites
    for i in 1:1:Pb.NBvariables
       if Parents[1].Solution[i]  == Parents[2].Solution[i]
          Child1.Solution[i] = Parents[1].Solution[i]
@@ -227,10 +253,6 @@ function CrossoverMethod(Pb::Problem,Parents::Vector{Genome})
          Child2.CurrentObjectiveValue += Pb.Variables[i]
       end
    end
-   #println("###################### Crossover Info ######################")
-   #println("# Parent 1 : ",Parents[1].CurrentObjectiveValue," | Parent 2 :",Parents[2].CurrentObjectiveValue)
-   #println("# Child 1 : ",Child1.CurrentObjectiveValue," | Child 2 : ",Child2.CurrentObjectiveValue)
-   #println("############################################################")
    return Child1,Child2
 end
 

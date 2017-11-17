@@ -12,35 +12,47 @@ function ReadFile(FileName::String)
          end
    end
    close(workingfile)
-   return Problem(NBvar, NBcons, Coef, LeftMembers_Constraints,Array{Float64}(2,NBvar),0,0,0)
+   IndexRow,IndexColumn,Value = findnz(LeftMembers_Constraints)
+   OrderedByCons = vcat(IndexColumn',IndexRow')
+   OrderedByCons = sortcols(OrderedByCons,by=a->a[2])
+   return Problem(NBvar, NBcons, Coef, IndexRow,IndexColumn,OrderedByCons[2,:],OrderedByCons[1,:],LeftMembers_Constraints,Array{Float64}(2,NBvar),0,0,0)
 end
-function plotRunGrasp(iname,zinit, zls, zbest)
-    figure("Examen d'un run",figsize=(6,6)) # Create a new figure
-    title("GRASP-SPP | zConst/zLS/zBest | "iname)
-    xlabel("Itérations")
-    ylabel("valeurs de z(x)")
-    ylim(0, maximum(zbest)+2)
+function gen_colors(n)
+  cs = distinguishable_colors(n,
+      [colorant"#FE4365", colorant"#eca25c"], # seed colors
+      lchoices=Float64[58, 45, 72.5, 90],     # lightness choices
+      transform=c -> deuteranopic(c, 0.1),    # color transform
+      cchoices=Float64[20,40],                # chroma choices
+      hchoices=[75,51,35,120,180,210,270,310] # hue choices
+  )
 
-    nPoint = length(zinit)
-    x=collect(1:nPoint)
-    xticks([1,convert(Int64,ceil(nPoint/4)),convert(Int64,ceil(nPoint/2)), convert(Int64,ceil(nPoint/4*3)),nPoint])
-    plot(x,zbest, linewidth=2.0, color="green", label="meilleures solutions")
-    plot(x,zls,ls="",marker="^",ms=2,color="green",label="toutes solutions améliorées")
-    plot(x,zinit,ls="",marker=".",ms=2,color="red",label="toutes solutions construites")
-    vlines(x, zinit, zls, linewidth=0.5)
-    legend(loc=4, fontsize ="small")
+  convert(Vector{Color}, cs)
 end
-function plotAnalyseGrasp(iname, x, zmoy, zmin, zmax)
-    figure("bilan tous runs",figsize=(6,6)) # Create a new figure
-    title("GRASP-SPP | zMin/zMoy/zMax | "iname)
-    xlabel("Itérations (pour nbRunGrasp)")
-    ylabel("valeurs de z(x)")
-    ylim(0, zmax[end]+2)
+function PlotGeneticAlgorithm(Population::Array{Vector{Genome}},N::Int32,Ngen::Int32,filename::String)
+   nbpoint = N*Ngen
+   x = collect(1:N)
+   y = Array{Int32}(N*Ngen,3)
+   Plot = Vector{Gadfly.Plot}(Ngen)
+   for i = 1:1:N
+      for j = 1:1:Ngen
+         y[(i-1)*Ngen + j,1] = Population[j][i].CurrentObjectiveValue
+         y[(i-1)*Ngen + j,2] = j
+         y[(i-1)*Ngen + j,3]  = i
+         #=if i == 1
+            rename!(y,:j,string("individu ",j))
+         end=#
+      end
 
-    nPoint = length(x)
-    intervalle = [reshape(zmoy,(1,nPoint)) - reshape(zmin,(1,nPoint)) ; reshape(zmax,(1, nPoint))-reshape(zmoy,(1,nPoint))]
-    xticks(x)
-    errorbar(x,zmoy,intervalle,lw=1, color="black", label="zMin zMax")
-    plot(x,zmoy,linestyle="-", marker="o", ms=4, color="green", label="zMoy")
-    legend(loc=4, fontsize ="small")
+   end
+   y = convert(DataFrame, y)
+   names!(y, [Symbol("f(x)"),Symbol("Generation"),Symbol("Numero")])
+   set_default_plot_size(35cm, 25cm)
+   plot(y, x="Numero",y="f(x)",
+         color="Generation",
+         Scale.color_discrete(),
+         Guide.title(string(Ngen," Generation pour le probleme ",filename)),
+         Theme(default_color=color("red"))
+   )
+   #plot(y, x="Generation 6",y="Generation 7" , Geom.point)
+   #plot(y,x="SepalLength", y="SepalWidth", Geom.point)
 end
