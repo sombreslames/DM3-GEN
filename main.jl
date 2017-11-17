@@ -51,7 +51,7 @@ function main()
    N::Int32             = 100
    Ngen::Int32          = 30
    Grasp1::Grasp        = Grasp([0.50,0.65,0.75,0.80,0.90],[0.20,0.20,0.20,0.20,0.20])
-   filename = string("pb_100rnd0100.dat")
+   filename = string("pb_2000rnd0100.dat")
    Pb::Problem          = ReadFile(string("./Data/",filename))
    println("Beginning evolution")
    println("Problem is ",filename)
@@ -60,8 +60,11 @@ function main()
    sv = Vector{Vector{Genome}}(Ngen)
    ngen = 0
    maxit = 5
-   for l in [0.01,0.05]
-      for g::Int32 in [50,100]
+   println("\\begin{tabular}{|c|c|c|c|c|c|c|c|c|}")
+   println("Problem & \\multicolumn{7}{|c|}{Genetic algorithm} \\\\")
+   println(" & \\multicolumn{2}{|c|}{Parameter} & \$ \\tilde{Z_{min }} \$ & \$ \\tilde{Z_{avg}} \$ & \$ \\tilde{Z_{max}} \$ & Time GRASP & Time Genetic \\\\")
+   for g::Int32 in [50,100]
+      for l in [0.01,0.05]
          max = 0
          min = typemax(Int32)
          AVG                  = 0
@@ -80,15 +83,12 @@ function main()
             end
 
          end
-
-         println("Pop size : ",g," Stop limit : ",l)
-         println("Max : ",max ," | Min : ",min)
-         println("Average time for GRASP construction : ", round(TimeCons/maxit,2))
-         println("Average time for genetic : ", round(TimeG/maxit,2))
-         println("Average known value is ",round(AVG/maxit,2))
+         println("\\hline")
+         println(filename[4:length(filename)]," & ",g," & ",l," & ",min," & ",round(AVG/maxit,2)," & ",max," & ", round(TimeCons/maxit,2)," & ",round(TimeG/maxit,2),"\\\\")
       end
    end
-
+   println("\\hline")
+   println("\\end{tabular}")
    #PlotGeneticAlgorithm(sv,N,ngen,filename)
 end
 
